@@ -1,10 +1,21 @@
 import { StyleSheet } from 'react-native';
+import { getBottomSpace } from 'react-native-iphone-x-helper';
+
+import { theme } from '../../theme';
 
 export const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
+  container: {},
+
+  button: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.colors.brand,
     justifyContent: 'center',
-    color: 'white',
+    alignItems: 'center',
+
+    position: 'absolute',
+    right: 16,
+    bottom: getBottomSpace() + 16,
   },
 });
