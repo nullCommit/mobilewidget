@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Image, TouchableOpacity } from 'react-native';
 import { ArrowLeft } from 'phosphor-react-native';
 import { captureScreen } from 'react-native-view-shot';
+import * as FileSystem from 'expo-file-system';
 
 import { FeedbackType } from '../Widget';
 import { feedbackTypes } from '../../utils/feedbackTypes';
@@ -10,6 +11,7 @@ import { styles } from './styles';
 import { theme } from '../../theme';
 import { ScreenshotButton } from '../ScreenshotButton';
 import { Button } from '../Button';
+import { api } from '../../libs/api';
 
 interface FormProps {
   feedbackType: FeedbackType;
@@ -23,6 +25,8 @@ export function Form({
   onFeedbackSent,
 }: FormProps) {
   const [screenshot, setScreenshot] = useState<string | null>(null);
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
+  const [comment, setComment] = useState('');
 
   const feedbackTypeInfo = feedbackTypes[feedbackType];
 
@@ -33,6 +37,30 @@ export function Form({
     })
       .then(uri => setScreenshot(uri))
       .catch(error => console.log(error));
+  }
+
+  async function handleSendFeedback() {
+    if (isSendingFeedback) {
+      return;
+    }
+
+    setIsSendingFeedback(true);
+    const screenshotBase64 =
+      screenshot &&
+      (await FileSystem.readAsStringAsync(screenshot, { encoding: 'base64' }));
+
+    try {
+      await api.post('/feedbacks', {
+        type: feedbackType,
+        screenshot: `data:image/png;base64, ${screenshotBase64}`,
+        comment,
+      });
+
+      onFeedbackSent();
+    } catch (error) {
+      console.log(error);
+      setIsSendingFeedback(false);
+    }
   }
 
   return (
@@ -54,8 +82,9 @@ export function Form({
       </View>
 
       <TextInput
-        multiline
         style={styles.input}
+        onChangeText={setComment}
+        multiline
         placeholder='Algo não está funcionando bem? Queremos corrigir. Conte com detalhes o que está acontecendo...'
         placeholderTextColor={theme.colors.text_secondary}
         autoCorrect={false}
@@ -68,7 +97,7 @@ export function Form({
           screenshot={screenshot}
         />
 
-        <Button isLoading={false} />
+        <Button isLoading={isSendingFeedback} onPress={handleSendFeedback} />
       </View>
     </View>
   );
